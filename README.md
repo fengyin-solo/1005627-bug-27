@@ -68,4 +68,11 @@ npm run build
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
 - 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
+- 单条记录的读取与保存走 `getEntry` / `updateEntry`：台账列表、详情抽屉、回显读的都是
+  同一份 localStorage 数据，保存一次落库。
+- 检查报送走 `submitInspection`：养护班按周提交检查，同一编号已有在办记录时重复报送只计
+  一次，不会重复开单。
+- 状态位的判定：各模块前两个状态为在办（计入待办/待检查清单），其余状态办结；养护确认
+  后记录即退出待办。
+- 补偿器伸缩量允许 0–300mm，超出范围的报送、保存与流转一律挡回（「提出更换」除外）。
 - 想回到初始数据：清掉浏览器里 `district-heating:entries` 这一项，或调用 `resetModule(模块)`。

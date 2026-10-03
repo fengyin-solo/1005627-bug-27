@@ -85,13 +85,24 @@ const meta = moduleMeta('circpump')
 const columns = ["泵编号", "所属换热站", "泵型号", "运行电流", "扬程", "保养周期", "上次保养日", "运行状态"]
 const actions = ["登记运行", "完成保养", "停用设备"]
 const statuses = ["待保养", "运行中", "已保养", "已停用"]
-const stats = [{"label": "运行中循环泵", "value": 0}, {"label": "待保养循环泵", "value": 0}, {"label": "本月保养数", "value": 0}]
+// 统计卡片按状态实时计数，待保养清单跟着数据层走。
+const statRules = [
+  { label: "运行中循环泵", status: "运行中" },
+  { label: "待保养循环泵", status: "待保养" },
+  { label: "本月保养数", status: "已保养" },
+]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
+const stats = computed(() =>
+  statRules.map((item) => ({
+    label: item.label,
+    value: rows.value.filter((row) => String(row.status) === item.status).length,
+  })),
+)
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
     status,
