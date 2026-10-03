@@ -63,6 +63,28 @@
       </tbody>
     </table>
 
+    <h3 class="sub-head">关联阀门井待检查清单</h3>
+    <p class="sub-desc">
+      直接取自阀门井维护台账的待检查/检查中井；养护完成或提出维修后自动退出，养护班按周报送。
+    </p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th v-for="column in wellColumns" :key="column">{{ column }}</th>
+          <th>井当前状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="row in wellRows" :key="`well-${String(row.id)}`">
+          <td v-for="column in wellColumns" :key="column">{{ row[column] ?? '—' }}</td>
+          <td>{{ row.status }}</td>
+        </tr>
+        <tr v-if="!wellRows.length">
+          <td :colspan="wellColumns.length + 1" class="empty-state">阀门井养护已全部闭环，暂待检查清单为空</td>
+        </tr>
+      </tbody>
+    </table>
+
     <footer class="page-foot">
       <span>共 {{ total }} 条循环泵运维记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
@@ -75,6 +97,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import {
   downloadEntries,
+  linkedWellChecklist,
   listEntries,
   moduleMeta,
   runAction as applyAction,
@@ -83,11 +106,13 @@ import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('circpump')
 const columns = ["泵编号", "所属换热站", "泵型号", "运行电流", "扬程", "保养周期", "上次保养日", "运行状态"]
+const wellColumns = ["井编号", "所属管段", "井盖状况", "检查人", "检查日期", "养护措施"]
 const actions = ["登记运行", "完成保养", "停用设备"]
 const statuses = ["待保养", "运行中", "已保养", "已停用"]
 const stats = [{"label": "运行中循环泵", "value": 0}, {"label": "待保养循环泵", "value": 0}, {"label": "本月保养数", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
+const wellRows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
@@ -128,6 +153,8 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    // 养护结果直接反映到这边：阀门井一旦养护闭环，就从待检查清单消失。
+    wellRows.value = linkedWellChecklist()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '循环泵运维列表读取失败'
   }
